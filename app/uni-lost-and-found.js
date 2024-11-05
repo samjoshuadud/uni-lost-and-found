@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Bell, Search, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import LoginButton from "./components/login-button"
+import { useAuth } from "@/lib/AuthContext"
+import AuthRequiredDialog from "./components/dialogs/AuthRequiredDialog"
 
 // Import sections
 import DashboardSection from "./components/sections/DashboardSection"
@@ -23,6 +25,8 @@ import VerificationSuccessDialog from "./components/dialogs/VerificationSuccessD
 import VerificationFailDialog from "./components/dialogs/VerificationFailDialog"
 
 export default function UniLostAndFound() {
+  const { user, isAdmin } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard")
   const [selectedItem, setSelectedItem] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -35,13 +39,6 @@ export default function UniLostAndFound() {
   ])
   const [adminNotifications, setAdminNotifications] = useState([])
   const [surrenderedItems, setSurrenderedItems] = useState([])
-  const [user, setUser] = useState({
-    id: "12345",
-    name: "John Doe",
-    email: "john.doe@university.edu",
-    avatar: "/placeholder.svg?height=100&width=100",
-    notifications: true,
-  })
   const [userNotifications, setUserNotifications] = useState([
     // Example structure
     {
@@ -111,6 +108,7 @@ export default function UniLostAndFound() {
   }
 
   const handleReportSubmit = (newItem) => {
+    if (requireAuth()) return;
     setPendingReport(newItem);
     setShowReportConfirmDialog(true);
   }
@@ -207,11 +205,27 @@ export default function UniLostAndFound() {
   }
 
   const handleClaim = (item, studentId, verificationAnswers) => {
-    setAdminNotifications([...adminNotifications, { id: Date.now(), type: 'claim', item, studentId, verificationAnswers }])
+    if (requireAuth()) return;
+    setAdminNotifications([...adminNotifications, { 
+      id: Date.now(), 
+      type: 'claim', 
+      item, 
+      studentId, 
+      verificationAnswers 
+    }]);
   }
 
   const handleFound = (item, studentId) => {
-    setSurrenderedItems([...surrenderedItems, { ...item, id: surrenderedItems.length + 1, foundBy: studentId, date: new Date().toISOString().split('T')[0] }])
+    if (requireAuth()) return;
+    setSurrenderedItems([
+      ...surrenderedItems, 
+      { 
+        ...item, 
+        id: surrenderedItems.length + 1, 
+        foundBy: studentId, 
+        date: new Date().toISOString().split('T')[0] 
+      }
+    ]);
   }
 
   const handleResolveNotification = (notificationId) => {
@@ -408,65 +422,106 @@ export default function UniLostAndFound() {
     }
   };
 
+  // Helper function to check if action requires auth
+  const requireAuth = (action) => {
+    if (!user) {
+      setShowAuthDialog(true);
+      return true;
+    }
+    return false;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-primary text-primary-foreground p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">UniLostAndFound</h1>
           <nav className="flex gap-4">
-            <Button variant="ghost" onClick={() => { setActiveSection("dashboard"); setSelectedItem(null); }}>Home</Button>
-            <Button variant="ghost" onClick={() => { setActiveSection("report"); setSelectedItem(null); }}>Report Item</Button>
-            <Button variant="ghost" onClick={() => { setActiveSection("pending_process"); setSelectedItem(null); }}>
-              <Bell className="mr-2 h-4 w-4" />
-              Pending Process
-              {pendingProcesses.length > 0 && (
-                <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                  {pendingProcesses.length}
-                </span>
-              )}
+            <Button variant="ghost" onClick={() => { setActiveSection("dashboard"); setSelectedItem(null); }}>
+              Home
             </Button>
-            <Button variant="ghost" onClick={() => { setActiveSection("profile"); setSelectedItem(null); }}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <Button variant="ghost" onClick={() => { 
+              if (requireAuth()) return;
+              setActiveSection("report"); 
+              setSelectedItem(null); 
+            }}>
+              Report Item
             </Button>
+            
+            {/* Show Pending Process only for logged-in students */}
+            {user && !isAdmin && (
+              <Button variant="ghost" onClick={() => { setActiveSection("pending_process"); setSelectedItem(null); }}>
+                <Bell className="mr-2 h-4 w-4" />
+                Pending Process
+                {pendingProcesses.length > 0 && (
+                  <span className="ml-2 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                    {pendingProcesses.length}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {/* Show Profile only for logged-in students */}
+            {user && !isAdmin && (
+              <Button variant="ghost" onClick={() => { setActiveSection("profile"); setSelectedItem(null); }}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+            )}
+
+            {/* Show Admin section only for admins */}
+            {isAdmin && (
+              <Button 
+                variant={activeSection === "admin" ? "default" : "ghost"}
+                onClick={() => { setActiveSection("admin"); setSelectedItem(null); }}
+              >
+                Admin
+              </Button>
+            )}
+
             <LoginButton />
           </nav>
         </div>
       </header>
 
       <main className="container mx-auto mt-8">
-        <div className="grid grid-cols-5 gap-4 mb-8">
-          <Button 
-            variant={activeSection === "dashboard" ? "default" : "outline"}
-            onClick={() => { setActiveSection("dashboard"); setSelectedItem(null); }}
-          >
-            Dashboard
-          </Button>
-          <Button 
-            variant={activeSection === "lost" ? "default" : "outline"}
-            onClick={() => { setActiveSection("lost"); setSelectedItem(null); }}
-          >
-            Lost Items
-          </Button>
-          <Button 
-            variant={activeSection === "found" ? "default" : "outline"}
-            onClick={() => { setActiveSection("found"); setSelectedItem(null); }}
-          >
-            Found Items
-          </Button>
-          <Button 
-            variant={activeSection === "history" ? "default" : "outline"}
-            onClick={() => { setActiveSection("history"); setSelectedItem(null); }}
-          >
-            History
-          </Button>
-          <Button 
-            variant={activeSection === "admin" ? "default" : "outline"}
-            onClick={() => { setActiveSection("admin"); setSelectedItem(null); }}
-          >
-            Admin
-          </Button>
-        </div>
+        {/* Only show section buttons for logged-in users */}
+        {user && (
+          <div className="grid grid-cols-5 gap-4 mb-8">
+            <Button 
+              variant={activeSection === "dashboard" ? "default" : "outline"}
+              onClick={() => { setActiveSection("dashboard"); setSelectedItem(null); }}
+            >
+              Dashboard
+            </Button>
+            <Button 
+              variant={activeSection === "lost" ? "default" : "outline"}
+              onClick={() => { setActiveSection("lost"); setSelectedItem(null); }}
+            >
+              Lost Items
+            </Button>
+            <Button 
+              variant={activeSection === "found" ? "default" : "outline"}
+              onClick={() => { setActiveSection("found"); setSelectedItem(null); }}
+            >
+              Found Items
+            </Button>
+            <Button 
+              variant={activeSection === "history" ? "default" : "outline"}
+              onClick={() => { setActiveSection("history"); setSelectedItem(null); }}
+            >
+              History
+            </Button>
+            {isAdmin && (
+              <Button 
+                variant={activeSection === "admin" ? "default" : "outline"}
+                onClick={() => { setActiveSection("admin"); setSelectedItem(null); }}
+              >
+                Admin
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-4 mb-8">
           <Input 
@@ -504,6 +559,11 @@ export default function UniLostAndFound() {
         ) : (
           renderSection()
         )}
+
+        <AuthRequiredDialog 
+          open={showAuthDialog} 
+          onOpenChange={setShowAuthDialog}
+        />
       </main>
 
       <ReportConfirmDialog 
