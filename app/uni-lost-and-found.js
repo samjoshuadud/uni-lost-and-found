@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Bell, Search, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import LoginButton from "./login-button"
+import LoginButton from "./components/login-button"
 
 // Import sections
 import DashboardSection from "./components/sections/DashboardSection"

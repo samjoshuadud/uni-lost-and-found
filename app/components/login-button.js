@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/AuthContext"
 import {
   Dialog,
   DialogContent,
@@ -12,16 +13,32 @@ import {
 import { useState } from "react"
 
 export default function LoginButton() {
-  const [showModal, setShowModal] = useState(false)
+  const { user, signInWithGoogle, logout, isAdmin } = useAuth();
+  const [showModal, setShowModal] = useState(false);
 
-  const handleContinue = () => {
-    window.location.href = '/login'
+  const handleContinue = async () => {
+    setShowModal(false);
+    await signInWithGoogle();
+  };
+
+  if (user) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm">
+          {user.email} 
+          {isAdmin && " (Admin)"}
+        </span>
+        <Button variant="ghost" onClick={logout}>
+          Logout
+        </Button>
+      </div>
+    );
   }
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setShowModal(true)}>
-        Login with Google
+      <Button variant="secondary" onClick={() => setShowModal(true)} className="bg-white text-zinc-950">
+        Sign in with Google
       </Button>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -48,5 +65,5 @@ export default function LoginButton() {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 } 
