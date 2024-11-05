@@ -25,15 +25,12 @@ export default function AuthRequiredDialog({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle>Sign in Required</DialogTitle>
           <DialogDescription>
-            Please sign in with your UMAK email to access this feature.
+            Please sign in with your UMAK email to continue.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
+        <DialogFooter>
           <Button onClick={handleSignIn}>
-            Continue with Google
+            Sign in with Google
           </Button>
         </DialogFooter>
       </DialogContent>

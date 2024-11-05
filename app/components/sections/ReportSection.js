@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
+import { useAuth } from "@/lib/AuthContext"
+import AuthRequiredDialog from "../dialogs/AuthRequiredDialog"
 
 export default function ReportSection({ onSubmit }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -18,6 +21,7 @@ export default function ReportSection({ onSubmit }) {
     studentId: "",
     additionalDetails: []
   })
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -25,6 +29,10 @@ export default function ReportSection({ onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
     onSubmit(formData)
   }
 
@@ -127,6 +135,11 @@ export default function ReportSection({ onSubmit }) {
           <Button type="submit" className="w-full">Submit Report</Button>
         </form>
       </CardContent>
+
+      <AuthRequiredDialog 
+        open={showAuthDialog} 
+        onOpenChange={setShowAuthDialog}
+      />
     </Card>
   )
 } 

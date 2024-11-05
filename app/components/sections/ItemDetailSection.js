@@ -5,12 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Trash } from "lucide-react"
+import { useAuth } from "@/lib/AuthContext"
+import AuthRequiredDialog from "../dialogs/AuthRequiredDialog"
 
-export default function ItemDetailSection({ item, onBack, onClaim, onFound }) {
+export default function ItemDetailSection({ item, onBack, onClaim, onFound, onDelete }) {
+  const { user, isAdmin } = useAuth();
   const [studentId, setStudentId] = useState("")
   const [verificationAnswers, setVerificationAnswers] = useState(Array(item.verificationQuestions?.length || 0).fill(""))
   const [showVerification, setShowVerification] = useState(false)
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
+
+  const handleAction = (action) => {
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+    action();
+  };
 
   const handleVerificationAnswer = (index, answer) => {
     const newAnswers = [...verificationAnswers]
@@ -19,14 +31,21 @@ export default function ItemDetailSection({ item, onBack, onClaim, onFound }) {
   }
 
   return (
-    <Card>
+    <Card key={user?.id || 'no-user'}>
       <CardHeader>
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={onBack}>
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <CardTitle>{item.name}</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={onBack}>
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <CardTitle>{item.name}</CardTitle>
+          </div>
+          {isAdmin && (
+            <Button variant="destructive" size="icon" onClick={() => onDelete?.(item.id)}>
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -52,76 +71,41 @@ export default function ItemDetailSection({ item, onBack, onClaim, onFound }) {
           <h3 className="font-semibold">Date Reported</h3>
           <p>{item.date}</p>
         </div>
-        {item.status !== "handed_over" && (
+        {!isAdmin && item.status !== "handed_over" && (
           <div className="space-y-2">
-            <Input
-              placeholder="Enter your student ID"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-            />
+            {user && (
+              <Input
+                placeholder="Enter your student ID"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+              />
+            )}
             <div className="flex gap-4">
               {item.status === "found" && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">This is mine</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Claim Item</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to claim this item? You will need to answer some verification questions.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button onClick={() => setShowVerification(true)}>Proceed to Verification</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  className="w-full"
+                  onClick={() => handleAction(() => setShowVerification(true))}
+                >
+                  This is mine
+                </Button>
               )}
               {item.status === "lost" && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">I found this</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Report Found Item</DialogTitle>
-                      <DialogDescription>
-                        Important: Please follow these steps in order
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="bg-muted p-4 rounded-lg space-y-2">
-                        <h4 className="font-semibold">Step 1: Submit Report</h4>
-                        <p>Fill in your student ID below and submit this report.</p>
-                      </div>
-                      <div className="bg-muted p-4 rounded-lg space-y-2">
-                        <h4 className="font-semibold">Step 2: Surrender Item</h4>
-                        <p>Please surrender the item to:</p>
-                        <p className="font-medium">Student Center - Lost and Found Office (Room 101)</p>
-                        <p className="text-sm text-muted-foreground">Office Hours: Monday-Friday, 8:00 AM - 5:00 PM</p>
-                      </div>
-                      <div className="bg-muted p-4 rounded-lg space-y-2">
-                        <h4 className="font-semibold">Step 3: Verification</h4>
-                        <p>Admin will verify and post the item after physical surrender.</p>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={() => {
-                        onFound(item, studentId);
-                        alert("Thank you for reporting! Please surrender the item to the Student Center (Room 101) as soon as possible.");
-                      }}>
-                        Submit Report
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  className="w-full"
+                  onClick={() => handleAction(() => onFound(item, studentId))}
+                >
+                  I found this
+                </Button>
               )}
             </div>
           </div>
         )}
       </CardContent>
-      {showVerification && (
+      <AuthRequiredDialog 
+        open={showAuthDialog} 
+        onOpenChange={setShowAuthDialog}
+      />
+      {user && !isAdmin && showVerification && (
         <Dialog open={showVerification} onOpenChange={setShowVerification}>
           <DialogContent>
             <DialogHeader>

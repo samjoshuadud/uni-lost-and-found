@@ -1,107 +1,139 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Upload, Settings } from "lucide-react"
+import { useAuth } from "@/lib/AuthContext"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CalendarDays, Mail, School, User } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
 
-export default function ProfileSection({ user, onUpdateUser }) {
-  const [editMode, setEditMode] = useState(false)
-  const [editedUser, setEditedUser] = useState(user)
+export default function ProfileSection() {
+  const { user } = useAuth();
+  const [role, setRole] = useState("Student"); // Default to Student
 
-  const handleChange = (e) => {
-    setEditedUser({ ...editedUser, [e.target.name]: e.target.value })
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onUpdateUser(editedUser)
-    setEditMode(false)
-  }
+  if (!user) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          Profile
-          {!editMode && (
-            <Button variant="outline" onClick={() => setEditMode(true)}>
-              <Settings className="mr-2 h-4 w-4" />
-              Edit Profile
-            </Button>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {editMode ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={editedUser.avatar} alt={editedUser.name} />
-                <AvatarFallback>{editedUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <Button variant="outline" className="cursor-pointer">
-                <Upload className="mr-2 h-4 w-4" />
-                Change Avatar
-              </Button>
+    <div className="space-y-6">
+      {/* Profile Overview Card */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-6">
+            {/* Profile Picture */}
+            <div className="relative">
+              {user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt="Profile" 
+                  className="w-24 h-24 rounded-full border-4 border-primary/10"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-12 w-12 text-primary/40" />
+                </div>
+              )}
+              <Badge className="absolute -bottom-2 right-0 px-3" variant="secondary">
+                {role}
+              </Badge>
             </div>
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={editedUser.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={editedUser.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="notifications"
-                checked={editedUser.notifications}
-                onCheckedChange={(checked) => setEditedUser({ ...editedUser, notifications: checked })}
-              />
-              <Label htmlFor="notifications">Receive email notifications</Label>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+
+            {/* Basic Info */}
+            <div className="flex-1 space-y-4">
               <div>
-                <h2 className="text-2xl font-bold">{user.name}</h2>
-                <p className="text-muted-foreground">{user.email}</p>
+                <h2 className="text-2xl font-bold">
+                  {user.displayName || "UMAK User"}
+                </h2>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                  <span>{user.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <School className="h-4 w-4" />
+                  <span>University of Makati</span>
+                </div>
+              </div>
+
+              {/* Role Selector */}
+              <div className="w-[200px]">
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Student">Student</SelectItem>
+                    <SelectItem value="Teacher">Teacher</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select your role at UMAK
+                </p>
               </div>
             </div>
-            <div>
-              <h3 className="font-semibold">Notifications</h3>
-              <p>{user.notifications ? "Enabled" : "Disabled"}</p>
-            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  )
+        </CardContent>
+      </Card>
+
+      {/* Activity Tabs */}
+      <Tabs defaultValue="reports" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="reports">My Reports</TabsTrigger>
+          <TabsTrigger value="claims">My Claims</TabsTrigger>
+          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="reports" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Reports History</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground">
+              No reports yet.
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="claims" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Claims History</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground">
+              No claims yet.
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Account Created</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(user.metadata.creationTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Last Sign In</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(user.metadata.lastSignInTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 } 
