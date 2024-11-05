@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trash, UserPlus, CheckCircle, XCircle } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Trash, UserPlus, CheckCircle, XCircle, ClipboardList, Package, Bell, Users } from "lucide-react"
 
 export default function AdminSection({ 
   items, 
@@ -33,6 +33,7 @@ export default function AdminSection({
   const [noShowItemId, setNoShowItemId] = useState(null);
   const [showApproveFoundDialog, setShowApproveFoundDialog] = useState(false);
   const [selectedFoundItem, setSelectedFoundItem] = useState(null);
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
 
   const getPendingApprovalCount = () => {
     return items.filter(item => 
@@ -85,38 +86,83 @@ export default function AdminSection({
 
   return (
     <div className="space-y-8">
+      {/* Admin Overview Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <ClipboardList className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending Reports</p>
+                <h3 className="text-2xl font-bold">{items.filter(item => item.status === "lost").length}</h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Surrendered Items</p>
+                <h3 className="text-2xl font-bold">{surrenderedItems.length}</h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Bell className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Verifications</p>
+                <h3 className="text-2xl font-bold">
+                  {notifications.filter(n => n.type === 'verification').length}
+                </h3>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Admin Management</p>
+                <Button variant="link" className="px-0" onClick={() => setShowAdminDialog(true)}>
+                  Assign Admin →
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
       <Card>
         <CardHeader>
           <CardTitle>Admin Dashboard</CardTitle>
         </CardHeader>
         <CardContent>
-          <Card className="mb-4">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold mb-4">Admin Management</h3>
-              <div className="flex items-center gap-4">
-                <Input
-                  placeholder="Enter UMAK email to assign as admin"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  className="flex-grow"
-                />
-                <Button onClick={handleAssignAdmin}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Assign Admin
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="lost">Lost Items</TabsTrigger>
+          <Tabs defaultValue="reports" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="reports">Lost Item Reports</TabsTrigger>
               <TabsTrigger value="found">Found Items</TabsTrigger>
-              <TabsTrigger value="verification">Verifications</TabsTrigger>
-              <TabsTrigger value="retrieval">Retrievals</TabsTrigger>
+              <TabsTrigger value="verifications">Verifications</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="lost" className="space-y-4 mt-4">
+            <TabsContent value="reports" className="space-y-4 mt-4">
               <h3 className="text-lg font-semibold">Lost Item Reports</h3>
               
               {/* New Status Summary Section */}
@@ -346,7 +392,7 @@ export default function AdminSection({
               ))}
             </TabsContent>
 
-            <TabsContent value="verification" className="space-y-4 mt-4">
+            <TabsContent value="verifications" className="space-y-4 mt-4">
               <h3 className="text-lg font-semibold">Verification Requests</h3>
               {notifications.filter(n => n.type === 'verification' && n.item).map((notification) => (
                 <Card 
@@ -420,6 +466,7 @@ export default function AdminSection({
         </CardContent>
       </Card>
 
+      {/* Success Dialog */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -439,6 +486,7 @@ export default function AdminSection({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Fail Dialog */}
       <AlertDialog open={showFailDialog} onOpenChange={setShowFailDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -458,6 +506,7 @@ export default function AdminSection({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* No Show Dialog */}
       <AlertDialog open={showNoShowDialog} onOpenChange={setShowNoShowDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -485,6 +534,7 @@ export default function AdminSection({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Approve Found Item Dialog */}
       <AlertDialog open={showApproveFoundDialog} onOpenChange={setShowApproveFoundDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -517,6 +567,35 @@ export default function AdminSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Admin Management Dialog */}
+      <Dialog open={showAdminDialog} onOpenChange={setShowAdminDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign New Admin</DialogTitle>
+            <DialogDescription>
+              Enter the UMAK email address of the user you want to assign as admin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder="Enter UMAK email"
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              className="flex-grow"
+            />
+            <Button onClick={handleAssignAdmin}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Assign
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAdminDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
