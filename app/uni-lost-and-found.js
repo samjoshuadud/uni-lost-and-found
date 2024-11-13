@@ -42,9 +42,9 @@ export default function UniLostAndFound() {
   const [userNotifications, setUserNotifications] = useState([
     // Example structure
     {
-      id: 1,
+      id: 2,
       type: "pending_approval", // or "item_found" or "verification_needed"
-      itemId: 1,
+      itemId: 2,
       message: "Your lost item report is pending approval",
       status: "pending" // or "verified" or "ready_for_pickup"
     }
