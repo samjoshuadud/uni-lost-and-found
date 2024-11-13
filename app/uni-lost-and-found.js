@@ -68,7 +68,7 @@ export default function UniLostAndFound() {
     item.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description.toLowerCase().includes(searchQuery.toLowerCase()))
   )
-
+// example
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
